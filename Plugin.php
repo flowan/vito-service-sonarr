@@ -1,18 +1,26 @@
 <?php
 
-namespace App\Vito\Plugins\Vitodeploy\PluginTemplate;
+namespace App\Vito\Plugins\Flowan\VitoServiceSonarr;
 
 use App\Plugins\AbstractPlugin;
+use App\Plugins\RegisterServiceType;
+use App\Vito\Plugins\Flowan\VitoServiceSonarr\Services\Sonarr;
 
 class Plugin extends AbstractPlugin
 {
-    protected string $name = 'Plugin Template';
+    protected string $name = 'Sonarr';
 
-    protected string $description = 'An example plugin template for vito plugins';
+    protected string $description = 'Sonarr is a PVR for Usenet and BitTorrent users.';
 
     public function boot(): void
     {
-        // Register plugin features here
-        // https://vitodeploy.com/docs/plugins
+        RegisterServiceType::make('sonarr')
+            ->type(Sonarr::type())
+            ->label('Sonarr')
+            ->handler(Sonarr::class)
+            ->versions([
+                'latest',
+            ])
+            ->register();
     }
 }
