@@ -152,12 +152,13 @@ EOF", 'create-systemd-service');
         $ssh->exec("sudo rm -rf $this->binDirectory", 'remove-sonarr');
         $ssh->exec("sudo rm -rf $this->dataDirectory", 'remove-data-directory');
 
-        app(ManageRule::class)->delete(
-            $this->service->server->firewallRules()
-                ->where('name', 'Sonarr')
-                ->where('port', $this->data()['port'])
-                ->first(),
-        );
+        if ($rule = $this->service->server->firewallRules()
+            ->where('name', 'Sonarr')
+            ->where('port', $this->data()['port'])
+            ->first()
+        ) {
+            app(ManageRule::class)->delete($rule);
+        }
 
         event('service.uninstalled', $this->service);
         $this->service->server->os()->cleanup();
@@ -197,10 +198,5 @@ EOF", 'create-systemd-service');
         } catch (\Exception $e) {
             return 'stopped';
         }
-    }
-
-    public function version(): string
-    {
-        return 'latest';
     }
 }
