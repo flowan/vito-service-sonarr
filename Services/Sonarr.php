@@ -140,17 +140,10 @@ EOF", 'create-systemd-service');
 
     public function uninstall(): void
     {
-        $ssh = $this->service->server->ssh();
-
-        if ($this->status() === 'running') {
-            $this->stop();
-        }
-
-        $this->disable();
-
-        $ssh->exec('sudo rm -rf /etc/systemd/system/sonarr.service', 'remove-systemd-service');
-        $ssh->exec("sudo rm -rf $this->binDirectory", 'remove-sonarr');
-        $ssh->exec("sudo rm -rf $this->dataDirectory", 'remove-data-directory');
+        $this->service->server->ssh()->exec(
+            view('vito-service-sonarr::uninstall-sonarr'),
+            'uninstall-sonarr'
+        );
 
         if ($rule = $this->service->server->firewallRules()
             ->where('name', 'Sonarr')
