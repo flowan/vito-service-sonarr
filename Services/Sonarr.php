@@ -33,8 +33,8 @@ class Sonarr extends AbstractService
     public function data(): array
     {
         return [
-            'port' => $this->service->data['port'] ?? 8989,
-            'branch' => $this->service->data['branch'] ?? 'main',
+            'port' => $this->service->type_data['port'] ?? 8989,
+            'branch' => $this->service->type_data['branch'] ?? 'main',
         ];
     }
 
@@ -51,11 +51,11 @@ class Sonarr extends AbstractService
         return [
             'type' => [
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    $existingSonarr = $this->service->server->services()
+                    $existingService = $this->service->server->services()
                         ->where('type', self::type())
                         ->where('name', self::id())
-                        ->first();
-                    if ($existingSonarr) {
+                        ->exists();
+                    if ($existingService) {
                         $fail('Sonarr is already installed on this server.');
                     }
                 },
@@ -94,7 +94,7 @@ class Sonarr extends AbstractService
 
         $ssh->exec("sudo rm -rf $this->binDirectory", 'remove-old-bin');
         $ssh->exec("sudo mv Sonarr $this->installDirectory", 'move-sonarr');
-        $ssh->exec("sudo chmod 775 $this->binDirectory && sudo chown root:root -R $this->binDirectory", 'set-permissions');
+        $ssh->exec("sudo chmod 775 $this->binDirectory && sudo chown vito:vito -R $this->binDirectory", 'set-permissions');
         $ssh->exec('sudo rm -f Sonarr.*.tar.gz', 'cleanup-tarball');
         $ssh->exec('sudo rm -rf /etc/systemd/system/sonarr.service', 'remove-old-service');
 
@@ -103,8 +103,8 @@ class Sonarr extends AbstractService
 Description=Sonarr Daemon
 After=syslog.target network.target
 [Service]
-User=root
-Group=root
+User=vito
+Group=vito
 UMask=0002
 Type=simple
 ExecStart=$this->binDirectory/Sonarr -nobrowser -data=$this->dataDirectory
