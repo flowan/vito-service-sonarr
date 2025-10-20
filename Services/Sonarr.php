@@ -66,57 +66,12 @@ class Sonarr extends AbstractService
 
     public function install(): void
     {
-        $ssh = $this->service->server->ssh();
-
-        $ssh->exec('sudo apt-get update -y', 'apt-update');
-        $ssh->exec('sudo apt-get install -y curl sqlite3 wget', 'install-prereqs');
-
-        if ($this->status() === 'running') {
-            $this->stop();
-            $this->disable();
-        }
-
-        $ssh->exec("sudo mkdir -p $this->dataDirectory && sudo chmod 775 $this->dataDirectory", 'create-directories');
-
-        $arch = trim($ssh->exec('dpkg --print-architecture', 'detect-architecture'));
-
-        $url = 'https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux';
-        $url = match ($arch) {
-            'amd64' => $url.'&arch=x64',
-            'armhf' => $url.'&arch=arm',
-            'arm64' => $url.'&arch=arm64',
-            default => throw new \Exception("Unsupported architecture: $arch"),
-        };
-
-        $ssh->exec('sudo rm -f Sonarr.*.tar.gz', 'cleanup-old-tarballs');
-        $ssh->exec("sudo wget --content-disposition \"$url\"", 'download-sonarr');
-        $ssh->exec('sudo tar -xvzf Sonarr.*.tar.gz', 'extract-sonarr');
-
-        $ssh->exec("sudo rm -rf $this->binDirectory", 'remove-old-bin');
-        $ssh->exec("sudo mv Sonarr $this->installDirectory", 'move-sonarr');
-        $ssh->exec("sudo chmod 775 $this->binDirectory && sudo chown vito:vito -R $this->binDirectory", 'set-permissions');
-        $ssh->exec('sudo rm -f Sonarr.*.tar.gz', 'cleanup-tarball');
-        $ssh->exec('sudo rm -rf /etc/systemd/system/sonarr.service', 'remove-old-service');
-
-        $ssh->exec("cat <<EOF | sudo tee /etc/systemd/system/sonarr.service >/dev/null
-[Unit]
-Description=Sonarr Daemon
-After=syslog.target network.target
-[Service]
-User=vito
-Group=vito
-UMask=0002
-Type=simple
-ExecStart=$this->binDirectory/Sonarr -nobrowser -data=$this->dataDirectory
-TimeoutStopSec=20
-KillMode=process
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
-EOF", 'create-systemd-service');
-
-        $ssh->exec('sudo systemctl -q daemon-reload', 'reload-systemd');
-        $ssh->exec('sudo systemctl -q enable --now -q sonarr', 'enable-start-sonarr');
+        $this->service->server->ssh()->exec(
+            view('vito-service-sonarr::install-sonarr', [
+                'branch' => $this->data()['branch'],
+            ]),
+            'install-sonarr'
+        );
 
         app(ManageRule::class)->create($this->service->server, [
             'name' => 'Sonarr',
