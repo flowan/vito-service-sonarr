@@ -69,7 +69,5 @@ sudo rm Sonarr*.linux*.tar.gz
 
 sudo mkdir -p /home/vito/media
 sudo mkdir -p /home/vito/media/tv
-sudo chown vito:media /home/vito/media
-sudo chown vito:media /home/vito/media/tv
-sudo chmod 775 /home/vito/media
-sudo chmod 775 /home/vito/media/tv
+sudo chown vito:media -R /home/vito/media
+sudo chmod 755 -R /home/vito/media
